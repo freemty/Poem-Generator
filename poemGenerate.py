@@ -16,6 +16,7 @@ class generate():
         self.vocab = vocab
 
 
+    
     def generate_text(self,correct = True):
         
         model = TGModel(self.config , 'prediction')
@@ -106,7 +107,7 @@ if __name__ == "__main__":
 
 
     data = Process_Poetry(Config)
-    x_data,y_data,vocab= data.run()
+    _,_,_,_,vocab= data.run()
     gen = generate(Config,vocab)
     gen.generate_text()
 

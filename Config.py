@@ -12,7 +12,7 @@ class Config:
     one_hot = False
     cut = None
     #train
-    lr = 0.0005
+    lr = 0.01
     batch_size = 64
     hidden_size = 128#embed_size
     layer_num = 2

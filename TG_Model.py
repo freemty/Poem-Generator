@@ -6,33 +6,35 @@ import numpy as np
 
 
 class TGModel(object):
-
-    def fit(self,sess,saver,x_data,y_data,vocab):
+    def fit(self,sess,saver,x_data,y_data,y_mask,vocab):
         for epoch in range(self.config.n_epochs):
             losses = []
             print("Epoch {} out of {}".format(epoch + 1, self.config.n_epochs))
             #prog = Progbar(target=1 + int(len(train_examples) / self.config.batch_size))
-            for batch in range(400):
-                index_all = np.arange(len(x_data))
-                index_batch = np.random.choice(index_all,self.config.batch_size)
-                inputs_batch = x_data[index_batch]
-                labels_batch = y_data[index_batch]
+            a = x_data.shape[0] // 64
+            for i in range(a):
+                inputs_batch = x_data[i * 64: 64 * i + 64]
+                labels_batch = y_data[i * 64: 64 * i + 64]
+                ym_batch = y_mask[i * 64: 64 * i + 64]
                 #labels_batch = self.create_ont_hot(labels_batch.reshape([-1]))
 
                 feed = {self.input_placeholder : inputs_batch ,\
-                        self.labels_placeholder : labels_batch}
-                loss,_,_ = sess.run([self.tensors['total_loss'],
-                                    self.tensors['train_op'],
-                                    self.tensors['last_state']],
-                        feed_dict = feed)
+                        self.labels_placeholder : labels_batch,
+                        self.y_mask : ym_batch}
+                loss,_ = sess.run([
+                                    self.tensors['total_loss'],
+                                    self.tensors['train_op']
+                                    ]
+                                    ,feed_dict = feed)
                 losses.append(loss)
-                if (batch+1) % 100 == 0:
-                        print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch + 1, batch + 1, losses[batch]))
+
+                if (i + 1) % 100 == 0:
+                        print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch + 1, i + 1, losses[i]))
                 #print(sess.run(self.global_steps))
 
             if epoch % 1 == 0:
                 saver.save(sess, self.config.model_path, global_step=self.global_steps)
-                print('global_step{} , loss = {}'.format(sess.run(self.global_steps),np.sum(losses)/400))
+                print('global_step : {} , loss = {}'.format(sess.run(self.global_steps),np.sum(losses)/a))
                 #prog.update(i + 1, [("train loss", loss)])
     
 
@@ -45,9 +47,9 @@ class TGModel(object):
     def build(self):
        
         #add_placeholder
-        self.input_placeholder = tf.placeholder(tf.int32 ,[None,None])
-        
-        self.labels_placeholder = tf.placeholder(tf.int32 ,[None,None])
+        self.y_mask = tf.placeholder(tf.bool,[self.config.batch_size,39])
+        self.input_placeholder = tf.placeholder(tf.int32 ,[self.config.batch_size,39])
+        self.labels_placeholder = tf.placeholder(tf.int32 ,[self.config.batch_size,39])
 
         #add_embeddings
         embeddings = tf.Variable(tf.random_uniform([self.config.vocab_size,self.config.hidden_size],-1.0,1.0))
@@ -83,15 +85,29 @@ class TGModel(object):
 
         if self.action == 'train':
             #add_loss_op
+            y_mask = tf.reshape(self.y_mask,[-1])
+            masked_pred = tf.boolean_mask(preds,y_mask,axis = 0)
+
+
             onehot_labels = tf.one_hot(tf.reshape(self.labels_placeholder , [-1]),                                         depth=self.config.vocab_size)
-            loss = tf.nn.softmax_cross_entropy_with_logits(labels= onehot_labels , logits = preds,name = 'loss')
+            masked_y = tf.boolean_mask(onehot_labels,y_mask,axis = 0)
+            loss = tf.nn.softmax_cross_entropy_with_logits(labels= masked_y , logits = masked_pred,name = 'loss')
             total_loss = tf.reduce_mean(loss)
 
             #add_trainop
-            train_op = tf.train.AdamOptimizer(self.config.lr).minimize(loss,global_step=self.global_steps)
+            op = tf.train.AdamOptimizer(self.config.lr)
+            #进行梯度裁剪
+            grads, variables = zip(*op.compute_gradients(loss))
+            grads, global_norm = tf.clip_by_global_norm(grads, 5,)
+            train_op = op.apply_gradients(zip(grads, variables),global_step= self.global_steps)
+
 
             self.tensors['initial_state'] = initial_state
             self.tensors['last_state'] = last_state
+            self.tensors['ot'] = onehot_labels
+            self.tensors['preds'] = preds
+            self.tensors['masked_y'] = masked_y
+            self.tensors['masked_pred'] = masked_pred
             self.tensors['output'] = output
             self.tensors['loss'] = loss
             self.tensors['total_loss'] = total_loss

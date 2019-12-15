@@ -46,10 +46,10 @@ class Process_Poetry():
             texts_new = []
             for i in self.texts:
                 mod = len(i) % self.config.maxlen
-                i += ('E' *(self.config.maxlen - mod))
-                for j in range(len(i) // self.config.maxlen + 1):
-                    texts_new.append(i[j * self.config.maxlen:\
-                        (j * self.config.maxlen + self.config.maxlen)])
+                i += ('P' *(self.config.maxlen - mod))
+                for j in range(len(i) // self.config.maxlen):
+                    texts_new.append(i[j * self.config.maxlen: (j * self.config.maxlen + self.config.maxlen)])
+            self.texts = texts_new
         else:
             raise ValueError('mode should be length so far')
         #生成字典
@@ -62,21 +62,19 @@ class Process_Poetry():
         del self.texts
 
     def create_batches(self):
-        x_batch = []
-        y_batch = []
-        
-        for i in self.encode_texts:
-            x_batch.append(i[:-1])
-            y_batch.append(i[1:])
+        pad_seq = np.array(self.encode_texts)
+        mask_seq = pad_seq.copy()
 
-        n,pad_seq = 0,[]
-        while n < len(self.encode_texts):
-            pad_seq += list(pad_sequences(x_batch[n : n+5000] , maxlen = self.config.maxlen,\
-                                            padding = 'post' , value = 0 , dtype = 'int'))
-        n += 5000
-
+        for i in range(mask_seq.shape[0]):
+            for j in range(mask_seq.shape[1]):
+                if mask_seq[i,j] == 1:
+                    mask_seq[i,j] = False
+                else:
+                    mask_seq[i,j] = True
+                    
         self.x_batch = np.array([i[:-1] for i in pad_seq])
         self.y_batch = np.array([i[1:] for i in pad_seq])
+        self.y_mask = np.array([i[1:] for i in mask_seq])
 
         if self.config.one_hot:
             y_one_hot = [self.create_one_hot(i,self.config.vocab_size) for i in self.y_batch]
@@ -93,14 +91,14 @@ class Process_Poetry():
         self.load_data()
         self.text2seq()
         self.create_batches()
-        self.x_batch = np.array(self.x_batch)
+
 
         if self.config.one_hot:
             self.y_batch = np.array(self.y_batch_one_hot)
         else:
             self.y_batch = np.array(self.y_batch)
 
-        return self.x_batch , self.y_batch , self.vocab
+        return self.x_batch , self.y_batch ,self.y_mask,self.vocab
 
 
 
