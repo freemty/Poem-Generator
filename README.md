@@ -1,4 +1,11 @@
-# Baby Poem Generate
+# Baby Poem Generate(2020.5)
+
+## Requirement
+[![](https://img.shields.io/badge/Python-3.5,3.6-blue.svg)](https://www.python.org/)
+[![](https://img.shields.io/badge/pandas-0.23.0-brightgreen.svg)](https://pypi.python.org/pypi/pandas/0.23.0)
+[![](https://img.shields.io/badge/numpy-1.14.3-brightgreen.svg)](https://pypi.python.org/pypi/numpy/1.14.3)
+[![](https://img.shields.io/badge/keras-2.1.6-brightgreen.svg)](https://pypi.python.org/pypi/keras/2.1.6)
+[![](https://img.shields.io/badge/tensorflow-1.4,1.6-brightgreen.svg)](https://pypi.python.org/pypi/tensorflow/1.6.0)<br>
 
 ## 介绍
 
@@ -14,26 +21,29 @@
 - **Generate**
   在训练一定程度后，就可以进行生成，可以选择输入start-token或者以随机词开始，要想形成诗，还是需要依赖人为的断句约束，可以通过修改`poemGenerate.py`生成部分的约束条件来改变短句长度
 
-## Example
+## 生成样例
 
-春日不能来处苦。
-今岁不应同梦泪，
-却笑花中一千载？
-今年春尽是何由？
+**《春》**
+春日不能来处苦。<br>
+今岁不应同梦泪，<br>
+却笑花中一千载？<br>
+今年春尽是何由？<br>
 
-天子龙城万丈春，黄河万国五年风。
-九衢无路何时日，犹得三春作帝王。
+**《天子》**
+天子龙城万丈春，黄河万国五年风。<br>
+九衢无路何时日，犹得三春作帝王。<br>
 
-欙阳宫殿里。
-金炉上殿，凤箫相对花中扇。
-春花落叶花枝里，绿叶落。
-春来月夜，红草斜。
+欙阳宫殿里。<br>
+金炉上殿，凤箫相对花中扇。<br>
+春花落叶花枝里，绿叶落。<br>
+春来月夜，红草斜。<br>
 
-沙场不觉有新声，
-万古犹能不自伤。
-若到江城花满夜。
-莫教心绪谁同事？
-西山有心心断处。
+**《沙场》**
+沙场不觉有新声，<br>
+万古犹能不自伤。<br>
+若到江城花满夜。<br>
+莫教心绪谁同事？<br>
+西山有心心断处。<br>
 
 ## 待办
 
