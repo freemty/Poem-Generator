@@ -1,6 +1,6 @@
 import tensorflow as tf 
 import numpy as np 
-import pickle
+import pickle as pkl
 import re
 
 import os
@@ -27,7 +27,7 @@ class generate():
         saver = tf.train.Saver(tf.global_variables())
         with tf.Session() as sess:
             sess.run(init)
-            checkpoint = tf.train.latest_checkpoint(DIR + '/model','checkpoint')
+            checkpoint = tf.train.latest_checkpoint(DIR + '/model/','checkpoint')
             saver.restore(sess , checkpoint)
 
             while True:
@@ -51,7 +51,7 @@ class generate():
 
                     punctuation = [vocab['，'], vocab['。'], vocab['？']]
                     punctuation_index = len(start_word)
-                    while index_next not in [0 , vocab['e']]:
+                    while index_next not in [0 , vocab['e']] :
                         input_index.append(index_next)
                         feed = {model.input_placeholder : np.array([input_index])}
                         y_predict , last_state = sess.run([tensors['prediction'],tensors['last_state']],
@@ -61,21 +61,19 @@ class generate():
                         y_predict = {num : i for num , i in enumerate(y_predict)}
                         index_max = sorted(y_predict , reverse = True , key = lambda x: y_predict[x])[:10]
                         index_next = np.random.choice(index_max)
+                        if index_next in [0 , vocab['e']] and len(input_index) < 25:
+                            index_next = np.random.choice(index_max)
 
                         punctuation_index += 1
 
                         if correct:
-
-                            if index_next in punctuation and punctuation_index > 3 and punctuation_index < 8:
-                                punctuation_index = 0
+                            if index_next in punctuation and punctuation_index < 8:
+                                while index_next in punctuation:
+                                    index_next = np.random.choice(index_max)
                             elif punctuation_index >= 8:
                                 punctuation_index = 0
                                 while (set(punctuation) & set(index_max)) and (index_next not in punctuation):
                                     index_next = np.random.choice(index_max)
-
-                            elif punctuation_index <= 3:
-                                while index_next in punctuation:
-                                    index_next = np.random.choice(index_max) 
                             else:
                                 pass
 
@@ -101,13 +99,35 @@ if __name__ == "__main__":
 
 
     DIR = os.path.dirname(os.path.abspath(__file__))
-
+    os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
     Config.data_path = DIR + '/data/Tang_Poetry.pkl'
     Config.model_path = DIR + '/model/train'
 
-
+    '''
     data = Process_Poetry(Config)
-    _,_,_,_,vocab= data.run()
+    _,_,_,vocab= data.run()
+    with open('data/vocab.pkl','wb')as f:
+        pkl.dump(vocab ,f)
+    '''
+    with open('data/vocab.pkl','rb')as f:
+        vocab = pkl.load(f)
+    Config.vocab_size = len(vocab.keys()) + 1
     gen = generate(Config,vocab)
+
     gen.generate_text()
 
+'''
+天子龙城去复平，东方南去几何同。
+青山不识三峰里，今去春生在水空。
+
+金陵水边日日暮，
+月华空望云云间，
+行处时处无穷恨。
+一片灯头满窗中？
+
+金陵风吹雪叶中，
+风烟袅杏风前起，
+玉盘帘里空中醉。
+秋光如落酒头回？
+
+'''

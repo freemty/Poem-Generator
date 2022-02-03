@@ -8,11 +8,11 @@ class Config:
     len_max = 200
     len_min = 0
     vocab_size = None
-    maxlen = 40 #单句最长
+    maxlen = 33 #单句最长
     one_hot = False
     cut = None
     #train
-    lr = 0.01
+    lr = 0.1
     batch_size = 64
     hidden_size = 128#embed_size
     layer_num = 2

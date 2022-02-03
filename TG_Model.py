@@ -8,6 +8,7 @@ import numpy as np
 class TGModel(object):
     def fit(self,sess,saver,x_data,y_data,y_mask,vocab):
         for epoch in range(self.config.n_epochs):
+            os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
             losses = []
             print("Epoch {} out of {}".format(epoch + 1, self.config.n_epochs))
             #prog = Progbar(target=1 + int(len(train_examples) / self.config.batch_size))
@@ -47,9 +48,9 @@ class TGModel(object):
     def build(self):
        
         #add_placeholder
-        self.y_mask = tf.placeholder(tf.bool,[self.config.batch_size,39])
-        self.input_placeholder = tf.placeholder(tf.int32 ,[self.config.batch_size,39])
-        self.labels_placeholder = tf.placeholder(tf.int32 ,[self.config.batch_size,39])
+        self.y_mask = tf.placeholder(tf.bool,[None,None])
+        self.input_placeholder = tf.placeholder(tf.int32 ,[None,None])
+        self.labels_placeholder = tf.placeholder(tf.int32 ,[None,None])
 
         #add_embeddings
         embeddings = tf.Variable(tf.random_uniform([self.config.vocab_size,self.config.hidden_size],-1.0,1.0))
@@ -95,10 +96,11 @@ class TGModel(object):
             total_loss = tf.reduce_mean(loss)
 
             #add_trainop
-            op = tf.train.AdamOptimizer(self.config.lr)
+            lr = tf.train.exponential_decay(self.config.lr,self.global_steps,12600,0.5)
+            op = tf.train.AdamOptimizer(lr)
             #进行梯度裁剪
             grads, variables = zip(*op.compute_gradients(loss))
-            grads, global_norm = tf.clip_by_global_norm(grads, 5,)
+            grads, global_norm = tf.clip_by_global_norm(grads, 5)
             train_op = op.apply_gradients(zip(grads, variables),global_step= self.global_steps)
 
 

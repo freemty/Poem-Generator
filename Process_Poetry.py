@@ -5,8 +5,7 @@ import pickle
 from Config import Config
 
 import numpy as np 
-import pandas as pd 
-import jieba
+import pandas as pd
 from collections import Counter
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -36,7 +35,7 @@ class Process_Poetry():
         if self.config.data_type == 'poem':
             self.config.cut = False
         if self.config.cut:
-            texts = [jieba.lcut(text) for text in self.texts]
+            #texts = [jieba.lcut(text) for text in self.texts]
             print('cut done!')
             tokenizer = Tokenizer(self.config.vocab_size, char_level= False)
         else:
@@ -76,10 +75,6 @@ class Process_Poetry():
         self.y_batch = np.array([i[1:] for i in pad_seq])
         self.y_mask = np.array([i[1:] for i in mask_seq])
 
-        if self.config.one_hot:
-            y_one_hot = [self.create_one_hot(i,self.config.vocab_size) for i in self.y_batch]
-            self.y_batch_one_hot = y_one_hot
-
     def create_one_hot(self,ids,vocab_size):
         one_hot = np.zeros([len(ids),vocab_size])
         for i,id in enumerate(ids):
@@ -91,12 +86,6 @@ class Process_Poetry():
         self.load_data()
         self.text2seq()
         self.create_batches()
-
-
-        if self.config.one_hot:
-            self.y_batch = np.array(self.y_batch_one_hot)
-        else:
-            self.y_batch = np.array(self.y_batch)
 
         return self.x_batch , self.y_batch ,self.y_mask,self.vocab
 
